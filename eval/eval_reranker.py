@@ -7,16 +7,16 @@
 # ]
 # ///
 """
-Evaluation got comparing base Jina reranker vs fine-tuned model.
+Evaluation for comparing base Jina reranker vs fine-tuned model.
 
-Tests 300+ cases across 10 tiers of increasing difficulty:
+Tests 368 cases across 10 tiers of increasing difficulty:
 1. Baseline - Exact/near-exact matches
 2. OCR/Noise - Extraction artifacts, typos, case issues
 3. Abbreviations - Formal and informal abbreviations
 4. Hierarchical - Department/lab/school structures
 5. Medical/Hospital - Healthcare affiliations
 6. Research Labs - National labs, corporate research
-7. International - Cross-lingual, transliteration
+7. Cross-lingual, transliteration, non-Latin scripts
 8. Disambiguation - Confusable institutions
 9. Negative Controls - Should NOT match
 10. Ultra-Hard - Combined challenges
@@ -1419,7 +1419,7 @@ TIER_6_RESEARCH_LABS = [
     ),
 ]
 
-# TIER 7: INTERNATIONAL (35 cases) - Cross-lingual, transliteration
+# TIER 7: Cross-lingual, transliteration (35 cases)
 
 TIER_7_INTERNATIONAL = [
     RankingTestCase(
@@ -1675,6 +1675,559 @@ TIER_7_INTERNATIONAL = [
         anchor="Complutense University of Madrid",
         positive="Universidad Complutense de Madrid",
         negatives=["Autonomous University of Madrid", "Carlos III University", "Polytechnic University of Madrid"],
+    ),
+    # =========================================================================
+    # EXTENDED NON-LATIN CHARACTER TESTS
+    # =========================================================================
+    # ROMANIZATION VARIATIONS - Different transliteration systems
+    RankingTestCase(
+        name="Beijing Wade-Giles",
+        tier="tier_7_international",
+        anchor="北京大学",
+        positive="Peking University",
+        negatives=["Beijing Normal University", "Tsinghua University", "Renmin University"],
+        notes="Wade-Giles romanization (Peking) vs Chinese characters",
+    ),
+    RankingTestCase(
+        name="Beijing Pinyin",
+        tier="tier_7_international",
+        anchor="北京大学",
+        positive="Beijing Daxue",
+        negatives=["Beijing Normal University", "Tsinghua University", "Renmin University"],
+        notes="Pinyin with tone-less transliteration",
+    ),
+    RankingTestCase(
+        name="Tsinghua Wade-Giles vs Pinyin",
+        tier="tier_7_international",
+        anchor="清华大学",
+        positive="Tsinghua University",
+        negatives=["Peking University", "Fudan University", "Zhejiang University"],
+        notes="Traditional Wade-Giles (Tsinghua) vs Simplified Chinese",
+    ),
+    RankingTestCase(
+        name="Qinghua Pinyin variant",
+        tier="tier_7_international",
+        anchor="清华大学",
+        positive="Qinghua Daxue",
+        negatives=["Peking University", "Fudan University", "Zhejiang University"],
+        notes="Pinyin romanization variant",
+    ),
+    RankingTestCase(
+        name="Seoul McCune-Reischauer",
+        tier="tier_7_international",
+        anchor="서울대학교",
+        positive="Sŏul Taehakkyo",
+        negatives=["Korea University", "Yonsei University", "KAIST"],
+        notes="McCune-Reischauer romanization with diacritics",
+    ),
+    RankingTestCase(
+        name="Seoul Revised Romanization",
+        tier="tier_7_international",
+        anchor="서울대학교",
+        positive="Seoul Daehakgyo",
+        negatives=["Korea University", "Yonsei University", "KAIST"],
+        notes="Revised Romanization of Korean",
+    ),
+    RankingTestCase(
+        name="Tokyo Hepburn",
+        tier="tier_7_international",
+        anchor="東京大学",
+        positive="Tōkyō Daigaku",
+        negatives=["Kyoto University", "Osaka University", "Tohoku University"],
+        notes="Hepburn romanization with macrons",
+    ),
+    RankingTestCase(
+        name="Tokyo simplified",
+        tier="tier_7_international",
+        anchor="東京大学",
+        positive="Tokyo Daigaku",
+        negatives=["Kyoto University", "Osaka University", "Tohoku University"],
+        notes="Simplified romanization without macrons",
+    ),
+    RankingTestCase(
+        name="Moscow full Cyrillic",
+        tier="tier_7_international",
+        anchor="Московский государственный университет",
+        positive="Moscow State University",
+        negatives=["St Petersburg University", "MIPT", "HSE Moscow"],
+        notes="Full Cyrillic to English",
+    ),
+    RankingTestCase(
+        name="Moscow Lomonosov Cyrillic",
+        tier="tier_7_international",
+        anchor="Московский государственный университет имени М. В. Ломоносова",
+        positive="Lomonosov Moscow State University",
+        negatives=["St Petersburg University", "MIPT", "HSE Moscow"],
+        notes="Full official Cyrillic name with Lomonosov",
+    ),
+    # DIACRITICS STRIPPING - OCR/noise scenarios where diacritics are lost
+    RankingTestCase(
+        name="Zurich no umlaut",
+        tier="tier_7_international",
+        anchor="ETH Zurich",
+        positive="ETH Zürich",
+        negatives=["EPFL", "University of Zurich", "University of Basel"],
+        notes="Missing umlaut in anchor",
+    ),
+    RankingTestCase(
+        name="Munchen no umlaut",
+        tier="tier_7_international",
+        anchor="Ludwig-Maximilians-Universitat Munchen",
+        positive="Ludwig-Maximilians-Universität München",
+        negatives=["TU Munich", "University of Augsburg", "RWTH Aachen"],
+        notes="Multiple missing umlauts",
+    ),
+    RankingTestCase(
+        name="Ecole no accent",
+        tier="tier_7_international",
+        anchor="Ecole Polytechnique Federale de Lausanne",
+        positive="École Polytechnique Fédérale de Lausanne",
+        negatives=["ETH Zurich", "University of Geneva", "University of Lausanne"],
+        notes="Missing French accents",
+    ),
+    RankingTestCase(
+        name="Autonoma no accent",
+        tier="tier_7_international",
+        anchor="Universidad Autonoma de Mexico",
+        positive="Universidad Autónoma de México",
+        negatives=["Tecnológico de Monterrey", "ITAM", "Universidad de Guadalajara"],
+        notes="Missing Spanish accents",
+    ),
+    RankingTestCase(
+        name="Sao Paulo no tilde",
+        tier="tier_7_international",
+        anchor="Universidade de Sao Paulo",
+        positive="Universidade de São Paulo",
+        negatives=["UNICAMP", "UFRJ", "UNESP"],
+        notes="Missing Portuguese tilde",
+    ),
+    RankingTestCase(
+        name="Goteborg Swedish",
+        tier="tier_7_international",
+        anchor="University of Goteborg",
+        positive="Göteborgs universitet",
+        negatives=["Uppsala University", "Lund University", "Stockholm University"],
+        notes="Missing Swedish ö",
+    ),
+    RankingTestCase(
+        name="Aarhus Danish",
+        tier="tier_7_international",
+        anchor="Aarhus University",
+        positive="Aarhus Universitet",
+        negatives=["Copenhagen University", "DTU", "Aalborg University"],
+        notes="Danish å often written as aa",
+    ),
+    RankingTestCase(
+        name="Lodz Polish",
+        tier="tier_7_international",
+        anchor="University of Lodz",
+        positive="Uniwersytet Łódzki",
+        negatives=["University of Warsaw", "Jagiellonian University", "AGH Krakow"],
+        notes="Polish ł and ó stripped",
+    ),
+    RankingTestCase(
+        name="Istanbul Turkish",
+        tier="tier_7_international",
+        anchor="Istanbul Technical University",
+        positive="İstanbul Teknik Üniversitesi",
+        negatives=["Boğaziçi University", "METU", "Koç University"],
+        notes="Turkish İ and ü",
+    ),
+    RankingTestCase(
+        name="Malaga Spanish",
+        tier="tier_7_international",
+        anchor="Universidad de Malaga",
+        positive="Universidad de Málaga",
+        negatives=["University of Seville", "University of Granada", "University of Valencia"],
+        notes="Missing Spanish acute accent",
+    ),
+    # MIXED SCRIPT - Partial transliteration/mixed languages
+    RankingTestCase(
+        name="Peking mixed",
+        tier="tier_7_international",
+        anchor="Peking 大学",
+        positive="Peking University",
+        negatives=["Tsinghua University", "Beijing Normal University", "Renmin University"],
+        notes="Mixed English and Chinese characters",
+    ),
+    RankingTestCase(
+        name="Tokyo mixed",
+        tier="tier_7_international",
+        anchor="Tokyo 大学",
+        positive="University of Tokyo",
+        negatives=["Kyoto University", "Osaka University", "Tohoku University"],
+        notes="Mixed English city name with Japanese suffix",
+    ),
+    RankingTestCase(
+        name="Seoul mixed",
+        tier="tier_7_international",
+        anchor="Seoul 대학교",
+        positive="Seoul National University",
+        negatives=["Korea University", "Yonsei University", "KAIST"],
+        notes="Mixed English city with Korean suffix",
+    ),
+    RankingTestCase(
+        name="Moscow mixed",
+        tier="tier_7_international",
+        anchor="Moscow университет",
+        positive="Moscow State University",
+        negatives=["St Petersburg University", "MIPT", "HSE Moscow"],
+        notes="Mixed English and Cyrillic",
+    ),
+    RankingTestCase(
+        name="Cairo mixed",
+        tier="tier_7_international",
+        anchor="Cairo جامعة",
+        positive="Cairo University",
+        negatives=["American University in Cairo", "Ain Shams University", "Alexandria University"],
+        notes="Mixed English and Arabic (جامعة = university)",
+    ),
+    RankingTestCase(
+        name="Tel Aviv mixed",
+        tier="tier_7_international",
+        anchor="Tel Aviv אוניברסיטת",
+        positive="Tel Aviv University",
+        negatives=["Hebrew University", "Technion", "Weizmann Institute"],
+        notes="Mixed English and Hebrew",
+    ),
+    # UNICODE NORMALIZATION - Full-width, combining characters, etc.
+    RankingTestCase(
+        name="Tokyo fullwidth",
+        tier="tier_7_international",
+        anchor="Ｔｏｋｙｏ　Ｕｎｉｖｅｒｓｉｔｙ",
+        positive="University of Tokyo",
+        negatives=["Kyoto University", "Osaka University", "Tohoku University"],
+        notes="Full-width Latin characters (common in Japanese documents)",
+    ),
+    RankingTestCase(
+        name="Seoul fullwidth",
+        tier="tier_7_international",
+        anchor="Ｓｅｏｕｌ　Ｎａｔｉｏｎａｌ　Ｕｎｉｖｅｒｓｉｔｙ",
+        positive="Seoul National University",
+        negatives=["Korea University", "Yonsei University", "KAIST"],
+        notes="Full-width Latin (common in Korean documents)",
+    ),
+    RankingTestCase(
+        name="Zurich combining",
+        tier="tier_7_international",
+        anchor="ETH Zu\u0308rich",
+        positive="ETH Zürich",
+        negatives=["EPFL", "University of Zurich", "University of Basel"],
+        notes="NFD form with combining diaeresis (u + ̈)",
+    ),
+    RankingTestCase(
+        name="Ecole combining",
+        tier="tier_7_international",
+        anchor="E\u0301cole Polytechnique",
+        positive="École Polytechnique",
+        negatives=["ENS Paris", "Paris-Saclay", "Sorbonne University"],
+        notes="NFD form with combining acute accent (E + ́)",
+    ),
+    RankingTestCase(
+        name="Sao combining",
+        tier="tier_7_international",
+        anchor="Universidade de Sa\u0303o Paulo",
+        positive="Universidade de São Paulo",
+        negatives=["UNICAMP", "UFRJ", "UNESP"],
+        notes="NFD form with combining tilde (a + ̃)",
+    ),
+    RankingTestCase(
+        name="Harvard zero-width",
+        tier="tier_7_international",
+        anchor="Harvard\u200BUniversity",
+        positive="Harvard University",
+        negatives=["Yale University", "Princeton University", "Columbia University"],
+        notes="Zero-width space (U+200B) between words",
+    ),
+    RankingTestCase(
+        name="MIT soft hyphen",
+        tier="tier_7_international",
+        anchor="Massa\u00ADchusetts Institute of Technology",
+        positive="Massachusetts Institute of Technology",
+        negatives=["Stanford", "Caltech", "Georgia Tech"],
+        notes="Soft hyphen (U+00AD) in the middle of word",
+    ),
+    RankingTestCase(
+        name="Stanford NBSP",
+        tier="tier_7_international",
+        anchor="Stanford\u00A0University",
+        positive="Stanford University",
+        negatives=["UC Berkeley", "USC", "UCLA"],
+        notes="Non-breaking space (U+00A0) instead of regular space",
+    ),
+    # ADDITIONAL SCRIPTS - Greek, Thai, more Cyrillic, Vietnamese
+    RankingTestCase(
+        name="Athens Greek",
+        tier="tier_7_international",
+        anchor="National and Kapodistrian University of Athens",
+        positive="Εθνικό και Καποδιστριακό Πανεπιστήμιο Αθηνών",
+        negatives=["Aristotle University of Thessaloniki", "University of Patras", "Athens University of Economics"],
+        notes="Greek script",
+    ),
+    RankingTestCase(
+        name="Thessaloniki Greek",
+        tier="tier_7_international",
+        anchor="Aristotle University of Thessaloniki",
+        positive="Αριστοτέλειο Πανεπιστήμιο Θεσσαλονίκης",
+        negatives=["University of Athens", "University of Patras", "University of Crete"],
+        notes="Greek script with English name",
+    ),
+    RankingTestCase(
+        name="Chulalongkorn Thai",
+        tier="tier_7_international",
+        anchor="Chulalongkorn University",
+        positive="จุฬาลงกรณ์มหาวิทยาลัย",
+        negatives=["Mahidol University", "Kasetsart University", "Thammasat University"],
+        notes="Thai script",
+    ),
+    RankingTestCase(
+        name="Mahidol Thai",
+        tier="tier_7_international",
+        anchor="Mahidol University",
+        positive="มหาวิทยาลัยมหิดล",
+        negatives=["Chulalongkorn University", "Kasetsart University", "Thammasat University"],
+        notes="Thai script",
+    ),
+    RankingTestCase(
+        name="Hanoi Vietnamese",
+        tier="tier_7_international",
+        anchor="Vietnam National University, Hanoi",
+        positive="Đại học Quốc gia Hà Nội",
+        negatives=["VNU Ho Chi Minh City", "Hanoi University of Science and Technology", "Foreign Trade University"],
+        notes="Vietnamese with diacritics",
+    ),
+    RankingTestCase(
+        name="Ho Chi Minh Vietnamese",
+        tier="tier_7_international",
+        anchor="Vietnam National University Ho Chi Minh City",
+        positive="Đại học Quốc gia Thành phố Hồ Chí Minh",
+        negatives=["VNU Hanoi", "Ho Chi Minh City University of Technology", "University of Economics HCMC"],
+        notes="Vietnamese Ho Chi Minh vs English",
+    ),
+    RankingTestCase(
+        name="Kyiv Ukrainian",
+        tier="tier_7_international",
+        anchor="Taras Shevchenko National University of Kyiv",
+        positive="Київський національний університет імені Тараса Шевченка",
+        negatives=["Igor Sikorsky Kyiv Polytechnic Institute", "Kharkiv National University", "Lviv University"],
+        notes="Ukrainian Cyrillic",
+    ),
+    RankingTestCase(
+        name="Kyiv vs Kiev spelling",
+        tier="tier_7_international",
+        anchor="Київський національний університет",
+        positive="Kyiv National University",
+        negatives=["Kiev Polytechnic", "Kharkiv University", "Lviv University"],
+        notes="Kyiv (Ukrainian) vs Kiev (Russian) romanization",
+    ),
+    RankingTestCase(
+        name="Prague Czech",
+        tier="tier_7_international",
+        anchor="Charles University",
+        positive="Univerzita Karlova",
+        negatives=["Czech Technical University", "Masaryk University", "Palacký University"],
+        notes="Czech name for Charles University in Prague",
+    ),
+    RankingTestCase(
+        name="Warsaw Polish",
+        tier="tier_7_international",
+        anchor="University of Warsaw",
+        positive="Uniwersytet Warszawski",
+        negatives=["Warsaw University of Technology", "Jagiellonian University", "University of Wrocław"],
+        notes="Polish name",
+    ),
+    RankingTestCase(
+        name="Krakow Jagiellonian",
+        tier="tier_7_international",
+        anchor="Jagiellonian University",
+        positive="Uniwersytet Jagielloński w Krakowie",
+        negatives=["University of Warsaw", "AGH Krakow", "University of Wrocław"],
+        notes="Polish name with w Krakowie suffix",
+    ),
+    RankingTestCase(
+        name="Budapest Hungarian",
+        tier="tier_7_international",
+        anchor="Eötvös Loránd University",
+        positive="Eötvös Loránd Tudományegyetem",
+        negatives=["Budapest University of Technology", "Semmelweis University", "Corvinus University"],
+        notes="Hungarian name with special characters ö, á",
+    ),
+    RankingTestCase(
+        name="Helsinki Finnish",
+        tier="tier_7_international",
+        anchor="University of Helsinki",
+        positive="Helsingin yliopisto",
+        negatives=["Aalto University", "University of Turku", "Tampere University"],
+        notes="Finnish name",
+    ),
+    RankingTestCase(
+        name="Zhejiang simplified",
+        tier="tier_7_international",
+        anchor="浙江大学",
+        positive="Zhejiang University",
+        negatives=["Fudan University", "Nanjing University", "Shanghai Jiao Tong University"],
+        notes="Simplified Chinese to English",
+    ),
+    RankingTestCase(
+        name="Nanjing Chinese",
+        tier="tier_7_international",
+        anchor="南京大学",
+        positive="Nanjing University",
+        negatives=["Southeast University", "Hohai University", "Nanjing Normal University"],
+        notes="Chinese characters (Simplified)",
+    ),
+    RankingTestCase(
+        name="Hong Kong traditional",
+        tier="tier_7_international",
+        anchor="香港大學",
+        positive="University of Hong Kong",
+        negatives=["Chinese University of Hong Kong", "HKUST", "City University of Hong Kong"],
+        notes="Traditional Chinese characters",
+    ),
+    RankingTestCase(
+        name="CUHK Chinese",
+        tier="tier_7_international",
+        anchor="香港中文大學",
+        positive="Chinese University of Hong Kong",
+        negatives=["University of Hong Kong", "HKUST", "City University of Hong Kong"],
+        notes="Traditional Chinese for CUHK",
+    ),
+    RankingTestCase(
+        name="NUS Chinese",
+        tier="tier_7_international",
+        anchor="新加坡国立大学",
+        positive="National University of Singapore",
+        negatives=["Nanyang Technological University", "Singapore Management University", "SUTD"],
+        notes="Simplified Chinese for NUS",
+    ),
+    RankingTestCase(
+        name="Osaka Japanese",
+        tier="tier_7_international",
+        anchor="大阪大学",
+        positive="Osaka University",
+        negatives=["University of Tokyo", "Kyoto University", "Nagoya University"],
+        notes="Japanese kanji",
+    ),
+    RankingTestCase(
+        name="Tohoku Japanese",
+        tier="tier_7_international",
+        anchor="東北大学",
+        positive="Tohoku University",
+        negatives=["University of Tokyo", "Hokkaido University", "Kyushu University"],
+        notes="Japanese kanji for Tohoku",
+    ),
+    RankingTestCase(
+        name="KAIST Korean",
+        tier="tier_7_international",
+        anchor="한국과학기술원",
+        positive="Korea Advanced Institute of Science and Technology",
+        negatives=["Seoul National University", "POSTECH", "Korea University"],
+        notes="Korean to full English name",
+    ),
+    RankingTestCase(
+        name="Yonsei Korean",
+        tier="tier_7_international",
+        anchor="연세대학교",
+        positive="Yonsei University",
+        negatives=["Seoul National University", "Korea University", "KAIST"],
+        notes="Korean script to English",
+    ),
+    RankingTestCase(
+        name="St Petersburg Cyrillic",
+        tier="tier_7_international",
+        anchor="Санкт-Петербургский государственный университет",
+        positive="Saint Petersburg State University",
+        negatives=["Moscow State University", "ITMO University", "HSE St Petersburg"],
+        notes="Full Cyrillic name",
+    ),
+    RankingTestCase(
+        name="Novosibirsk Cyrillic",
+        tier="tier_7_international",
+        anchor="Новосибирский государственный университет",
+        positive="Novosibirsk State University",
+        negatives=["Tomsk State University", "Ural Federal University", "Siberian Federal University"],
+        notes="Siberian university in Cyrillic",
+    ),
+    RankingTestCase(
+        name="Al-Azhar Arabic",
+        tier="tier_7_international",
+        anchor="جامعة الأزهر",
+        positive="Al-Azhar University",
+        negatives=["Cairo University", "Alexandria University", "Ain Shams University"],
+        notes="Arabic script for Al-Azhar",
+    ),
+    RankingTestCase(
+        name="King Saud Arabic",
+        tier="tier_7_international",
+        anchor="جامعة الملك سعود",
+        positive="King Saud University",
+        negatives=["King Abdulaziz University", "KAUST", "King Fahd University"],
+        notes="Arabic script for Saudi university",
+    ),
+    RankingTestCase(
+        name="Tehran Persian",
+        tier="tier_7_international",
+        anchor="دانشگاه تهران",
+        positive="University of Tehran",
+        negatives=["Sharif University", "Amirkabir University", "Iran University of Science and Technology"],
+        notes="Persian/Farsi script",
+    ),
+    RankingTestCase(
+        name="IIT Bombay Devanagari",
+        tier="tier_7_international",
+        anchor="भारतीय प्रौद्योगिकी संस्थान मुंबई",
+        positive="Indian Institute of Technology Bombay",
+        negatives=["IIT Delhi", "IIT Madras", "IIT Kanpur"],
+        notes="Hindi/Devanagari for IIT Bombay",
+    ),
+    RankingTestCase(
+        name="IISc Bangalore Devanagari",
+        tier="tier_7_international",
+        anchor="भारतीय विज्ञान संस्थान",
+        positive="Indian Institute of Science",
+        negatives=["IIT Bangalore", "IIIT Bangalore", "Bangalore University"],
+        notes="Hindi name for IISc",
+    ),
+    RankingTestCase(
+        name="Bangladesh Bangla",
+        tier="tier_7_international",
+        anchor="ঢাকা বিশ্ববিদ্যালয়",
+        positive="University of Dhaka",
+        negatives=["Bangladesh University of Engineering", "Jahangirnagar University", "Chittagong University"],
+        notes="Bengali/Bangla script",
+    ),
+    RankingTestCase(
+        name="Colombo Sinhala",
+        tier="tier_7_international",
+        anchor="කොළඹ විශ්වවිද්‍යාලය",
+        positive="University of Colombo",
+        negatives=["University of Peradeniya", "University of Kelaniya", "University of Moratuwa"],
+        notes="Sinhala script (Sri Lanka)",
+    ),
+    # EDGE CASES - Unusual but realistic scenarios
+    RankingTestCase(
+        name="CJK spaces",
+        tier="tier_7_international",
+        anchor="北京　大学",
+        positive="Peking University",
+        negatives=["Tsinghua University", "Beijing Normal University", "Renmin University"],
+        notes="Ideographic space (U+3000) between characters",
+    ),
+    RankingTestCase(
+        name="Arabic-Indic numerals",
+        tier="tier_7_international",
+        anchor="جامعة الملك عبدالله للعلوم والتقنية",
+        positive="King Abdullah University of Science and Technology",
+        negatives=["King Saud University", "King Fahd University", "Taibah University"],
+        notes="KAUST in Arabic script",
+    ),
+    RankingTestCase(
+        name="Devanagari numerals",
+        tier="tier_7_international",
+        anchor="दिल्ली विश्वविद्यालय",
+        positive="University of Delhi",
+        negatives=["JNU Delhi", "IIT Delhi", "Delhi Technological University"],
+        notes="Hindi name for University of Delhi",
     ),
 ]
 
@@ -2324,7 +2877,6 @@ TIER_NAMES = {
 
 @dataclass
 class ModelResults:
-    """Results for a single model on all test cases."""
     name: str
     case_results: list[dict]
     accuracy: float
@@ -2337,7 +2889,6 @@ class ModelResults:
 
 
 def evaluate_model(model: CrossEncoder, model_name: str, cases: list[RankingTestCase]) -> ModelResults:
-    """Evaluate a model on all test cases."""
     case_results = []
 
     for case in cases:
@@ -2420,8 +2971,6 @@ def evaluate_model(model: CrossEncoder, model_name: str, cases: list[RankingTest
 
 
 def print_comparison(base: ModelResults, finetuned: ModelResults):
-    """Print detailed comparison between two models."""
-
     print("=" * 100)
     print("COMPREHENSIVE AFFILIATION RERANKER EVALUATION")
     print("=" * 100)
@@ -2431,7 +2980,6 @@ def print_comparison(base: ModelResults, finetuned: ModelResults):
         count = len([c for c in ALL_CASES if c.tier == tier])
         print(f"  {name}: {count}")
 
-    # Overall metrics
     print("\n" + "=" * 100)
     print("OVERALL METRICS")
     print("=" * 100)
@@ -2456,7 +3004,6 @@ def print_comparison(base: ModelResults, finetuned: ModelResults):
             winner = "✓" if delta < 0 else ("" if delta == 0 else "✗")
         print(f"{name:<30} {base_val:<20.4f} {ft_val:<20.4f} {delta_str} {winner}")
 
-    # Per-tier breakdown
     print("\n" + "=" * 100)
     print("ACCURACY BY TIER")
     print("=" * 100)
@@ -2471,7 +3018,6 @@ def print_comparison(base: ModelResults, finetuned: ModelResults):
         winner = "✓" if delta > 0 else ("" if delta == 0 else "✗")
         print(f"{name:<25} {base_acc:<20.2%} {ft_acc:<20.2%} {delta_str} {winner}")
 
-    # MRR by tier
     print("\n" + "=" * 100)
     print("MRR BY TIER")
     print("=" * 100)
@@ -2486,7 +3032,6 @@ def print_comparison(base: ModelResults, finetuned: ModelResults):
         winner = "✓" if delta > 0 else ("" if delta == 0 else "✗")
         print(f"{name:<25} {base_mrr:<20.4f} {ft_mrr:<20.4f} {delta_str} {winner}")
 
-    # Failures analysis
     print("\n" + "=" * 100)
     print("FAILURE ANALYSIS")
     print("=" * 100)
@@ -2514,7 +3059,6 @@ def print_comparison(base: ModelResults, finetuned: ModelResults):
             if len(tier_failures) > 5:
                 print(f"    ... and {len(tier_failures) - 5} more")
 
-    # Improvements and regressions
     print("\n" + "=" * 100)
     print("IMPROVEMENT ANALYSIS")
     print("=" * 100)
@@ -2572,7 +3116,6 @@ Net Change: {len(improved)} improvements, {len(regressed)} regressions
 
 
 def main():
-    """Run the evaluation."""
     print("Loading models...")
 
     base_model = CrossEncoder(
@@ -2601,10 +3144,8 @@ def main():
         ALL_CASES,
     )
 
-    # Print comparison
     comparison = print_comparison(base_results, finetuned_results)
 
-    # Save detailed results to JSON
     output = {
         "base_model": base_results.name,
         "finetuned_model": finetuned_results.name,
@@ -2633,7 +3174,6 @@ def main():
         },
     }
 
-    # Custom encoder to handle numpy types
     class NumpyEncoder(json.JSONEncoder):
         def default(self, obj):
             import numpy as np
