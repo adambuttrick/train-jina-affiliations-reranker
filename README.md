@@ -126,13 +126,3 @@ pairs = [
 scores = model.predict(pairs)
 # Higher score = more likely to be the same institution
 ```
-
-## Configuration
-
-| Parameter | Value | Rationale |
-|-----------|-------|-----------|
-| Epochs | 3 | Conservative to avoid overfitting |
-| Batch size | 16 | Fits L4 24GB VRAM |
-| Learning rate | 2e-5 | Standard for fine-tuning |
-| Validation | Last 15% | Hardest examples |
-| Shuffle | Disabled | Preserves curriculum |
