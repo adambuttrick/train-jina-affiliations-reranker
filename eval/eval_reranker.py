@@ -3116,15 +3116,25 @@ Net Change: {len(improved)} improvements, {len(regressed)} regressions
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Evaluate reranker models")
+    parser.add_argument("--model1", type=str, default="cometadata/jina-reranker-v2-multilingual-affiliations",
+                        help="Base model to compare")
+    parser.add_argument("--model2", type=str, default="cometadata/jina-reranker-v2-multilingual-affiliations-v2",
+                        help="Fine-tuned model to compare")
+    args = parser.parse_args()
+
     print("Loading models...")
+    print(f"  Model 1 (base): {args.model1}")
+    print(f"  Model 2 (fine-tuned): {args.model2}")
 
     base_model = CrossEncoder(
-        "jinaai/jina-reranker-v2-base-multilingual",
+        args.model1,
         trust_remote_code=True,
     )
 
     finetuned_model = CrossEncoder(
-        "cometadata/jina-reranker-v2-multilingual-affiliations",
+        args.model2,
         trust_remote_code=True,
     )
 
@@ -3133,14 +3143,14 @@ def main():
     print("\nEvaluating base model...")
     base_results = evaluate_model(
         base_model,
-        "jinaai/jina-reranker-v2-base-multilingual",
+        args.model1,
         ALL_CASES,
     )
 
     print("Evaluating fine-tuned model...")
     finetuned_results = evaluate_model(
         finetuned_model,
-        "cometadata/jina-reranker-v2-multilingual-affiliations",
+        args.model2,
         ALL_CASES,
     )
 
