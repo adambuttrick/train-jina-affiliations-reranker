@@ -4,9 +4,16 @@ Fine-tune [jina-reranker-v2-base-multilingual](https://huggingface.co/jinaai/jin
 
 ## Dataset
 
-Uses [cometadata/triplet-loss-for-embedding-affiliations-sample-1](https://huggingface.co/datasets/cometadata/triplet-loss-for-embedding-affiliations-sample-1):
-- ~8K triplets (anchor, positive, negative), pre-sorted by difficulty
+Mixed training combining two sources:
+
+[cometadata/triplet-loss-for-embedding-affiliations-sample-1](https://huggingface.co/datasets/cometadata/triplet-loss-for-embedding-affiliations-sample-1)
+- ~8K curated triplets (anchor, positive, negative), pre-sorted by difficulty
 - 80% hard negatives, 20% easy negatives
+
+[cometadata/affilgood-scored](https://huggingface.co/datasets/cometadata/affilgood-scored)
+- AffilGood contrastive pairs, pre-scored with the fine-tuned model
+- Filtered to hardest cases (margin < 0.05) where the model struggles
+- Added at 10% ratio relative to primary dataset
 
 ## Training
 
@@ -19,16 +26,19 @@ Uses [cometadata/triplet-loss-for-embedding-affiliations-sample-1](https://huggi
 ### Command-Line Arguments
 
 ```
---org ORG             HuggingFace organization to push the model to (required)
---model-name NAME     Model name (default: jina-reranker-v2-multilingual-affiliations)
---dataset DATASET     Training dataset (default: cometadata/triplet-loss-for-embedding-affiliations-sample-1)
---base-model MODEL    Base model to fine-tune (default: jinaai/jina-reranker-v2-base-multilingual)
---output-dir DIR      Local checkpoint directory (default: ./output)
---epochs N            Training epochs (default: 3)
---batch-size N        Batch size (default: 16)
---learning-rate LR    Learning rate (default: 2e-5)
---eval-steps N        Steps between evaluations (default: 500)
---val-split FRAC      Validation fraction (default: 0.15)
+--org ORG               HuggingFace organization to push the model to (required)
+--model-name NAME       Model name (default: jina-reranker-v2-multilingual-affiliations-v4)
+--dataset DATASET       Primary dataset (default: cometadata/triplet-loss-for-embedding-affiliations-sample-1)
+--affilgood-scored DS   Pre-scored AffilGood dataset (default: cometadata/affilgood-scored)
+--margin-threshold N    Keep AffilGood triplets with margin below this (default: 0.05)
+--affilgood-ratio N     AffilGood samples as fraction of primary dataset (default: 0.1)
+--base-model MODEL      Base model to fine-tune (default: jinaai/jina-reranker-v2-base-multilingual)
+--output-dir DIR        Local checkpoint directory (default: ./output)
+--epochs N              Training epochs (default: 2)
+--batch-size N          Batch size (default: 32)
+--learning-rate LR      Learning rate (default: 2e-5)
+--eval-steps N          Steps between evaluations (default: 500)
+--val-split FRAC        Validation fraction (default: 0.05)
 ```
 
 ### Run Locally
@@ -77,30 +87,6 @@ The evaluation script benchmarks base vs fine-tuned models across 300 test cases
 cd eval
 uv run eval_reranker.py
 ```
-
-### Results
-
-**Overall Performance:**
-
-| Metric | Base Model | Fine-tuned | Δ |
-|--------|------------|------------|---|
-| Accuracy | 78.3% | 84.3% | +6.0% |
-| MRR | 0.873 | 0.913 | +0.040 |
-
-**Performance by Tier:**
-
-| Tier | Cases | Base | Fine-tuned | Δ |
-|------|-------|------|------------|---|
-| Baseline | 30 | 100.0% | 100.0% | — |
-| OCR/Noise | 30 | 100.0% | 100.0% | — |
-| Abbreviations | 40 | 60.0% | 80.0% | +20.0% |
-| Hierarchical | 35 | 71.4% | 77.1% | +5.7% |
-| Medical/Hospital | 25 | 64.0% | 68.0% | +4.0% |
-| Research Labs | 25 | 80.0% | 84.0% | +4.0% |
-| International | 35 | 82.9% | 91.4% | +8.6% |
-| Disambiguation | 31 | 45.2% | 51.6% | +6.5% |
-| Negative Controls | 19 | 100.0% | 100.0% | — |
-| Ultra-Hard | 30 | 93.3% | 96.7% | +3.3% |
 
 Results are saved to `eval_results.json`.
 
