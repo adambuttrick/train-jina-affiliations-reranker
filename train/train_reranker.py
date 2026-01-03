@@ -82,7 +82,6 @@ def load_filtered_affilgood(scored_dataset: str, margin_threshold: float, max_sa
     dataset = load_dataset(scored_dataset, split="train")
     logger.info(f"Loaded {len(dataset)} scored triplets")
 
-    # Filter by margin threshold
     filtered = dataset.filter(lambda x: x["margin"] < margin_threshold)
     logger.info(f"Filtered to {len(filtered)} triplets with margin < {margin_threshold}")
 
@@ -91,7 +90,6 @@ def load_filtered_affilgood(scored_dataset: str, margin_threshold: float, max_sa
         for row in filtered
     ]
 
-    # Downsample if requested
     if max_samples and len(triplets) > max_samples:
         random.seed(seed)
         triplets = random.sample(triplets, max_samples)
@@ -141,7 +139,6 @@ def load_model(model_name: str, output_model_name: str):
 
 def create_evaluator(val_triplets: list[dict], batch_size: int = 16):
     """Create a reranking evaluator from validation triplets."""
-    # Filter out samples where positive == negative
     reranking_samples = []
     skipped = 0
     for row in val_triplets:
@@ -297,53 +294,42 @@ def main():
     logger.info(f"Output: {hub_model_id}")
     logger.info("=" * 60)
 
-    # Load original dataset
     original_train, original_val = load_original_dataset(args.dataset, args.val_split)
 
-    # Calculate AffilGood sample count (fraction of original)
     affilgood_count = int(len(original_train) * args.affilgood_ratio)
     logger.info(f"Target AffilGood samples: {affilgood_count} ({args.affilgood_ratio:.0%} of {len(original_train)})")
 
-    # Load AffilGood subset
     affilgood_train = load_filtered_affilgood(
         args.affilgood_scored,
         args.margin_threshold,
         max_samples=affilgood_count,
     )
 
-    # Mix datasets
     mixed_triplets = original_train + affilgood_train
     logger.info(f"Mixed dataset: {len(original_train)} original + {len(affilgood_train)} AffilGood = {len(mixed_triplets)} total")
 
-    # Shuffle the mixed dataset
     random.seed(42)
     random.shuffle(mixed_triplets)
     logger.info("Shuffled mixed dataset")
 
-    # Convert to pairs
     train_pairs = triplets_to_pairs(mixed_triplets)
     val_pairs = triplets_to_pairs(original_val)
 
     logger.info(f"Training pairs: {len(train_pairs)}")
     logger.info(f"Validation pairs: {len(val_pairs)}")
 
-    # Create datasets
     train_dataset = Dataset.from_list(train_pairs)
     val_dataset = Dataset.from_list(val_pairs)
 
-    # Load model
     model = load_model(args.base_model, hub_model_id)
     loss = BinaryCrossEntropyLoss(model=model)
 
-    # Create evaluator
     evaluator = create_evaluator(original_val, batch_size=args.batch_size)
 
-    # Evaluate base model
     logger.info("Evaluating base model...")
     base_results = evaluator(model)
     logger.info(f"Base model: {base_results}")
 
-    # Training
     logger.info("=" * 60)
     logger.info(f"TRAINING: {args.epochs} epochs on mixed dataset")
     logger.info("=" * 60)
@@ -369,7 +355,6 @@ def main():
 
     trainer.train()
 
-    # Final evaluation
     logger.info("=" * 60)
     logger.info("FINAL EVALUATION")
     logger.info("=" * 60)
@@ -383,7 +368,6 @@ def main():
     logger.info(f"Pushing to Hub: {hub_model_id}")
     model.push_to_hub(hub_model_id, exist_ok=True)
 
-    # Summary
     logger.info("=" * 60)
     logger.info("TRAINING SUMMARY")
     logger.info("=" * 60)

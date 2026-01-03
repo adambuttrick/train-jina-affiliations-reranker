@@ -8,9 +8,7 @@
 # ]
 # ///
 """
-Filter AffilGood dataset to keep only cases where the fine-tuned model struggles.
-
-This identifies disambiguation cases where additional training would help,
+Filter AffilGood dataset to keep only disambiguation cases where additional training would help,
 while avoiding cases the model already handles well.
 
 Usage:
@@ -185,39 +183,29 @@ def main():
     logger.info(f"Output: {args.output}")
     logger.info("=" * 60)
 
-    # Load model
     logger.info(f"Loading model: {args.model}")
     model = CrossEncoder(args.model, trust_remote_code=True)
-
-    # Load and expand AffilGood
     triplets = load_affilgood_triplets()
-
-    # Score all triplets
     scored_triplets = score_triplets(model, triplets, batch_size=args.batch_size)
 
-    # Analyze distribution
     analyze_distribution(scored_triplets)
 
     if args.analyze_only:
         logger.info("Analyze-only mode, not saving filtered output")
         return
 
-    # Filter by threshold
     filtered = filter_by_threshold(scored_triplets, args.threshold)
 
-    # Remove score fields for output (keep only anchor, positive, negative)
     output_triplets = [
         {"anchor": t["anchor"], "positive": t["positive"], "negative": t["negative"]}
         for t in filtered
     ]
 
-    # Save filtered triplets
     with open(args.output, "w") as f:
         json.dump(output_triplets, f, indent=2, ensure_ascii=False)
 
     logger.info(f"Saved {len(output_triplets)} filtered triplets to {args.output}")
 
-    # Also save scored version for analysis
     scored_output = args.output.replace(".json", "_scored.json")
     with open(scored_output, "w") as f:
         json.dump(filtered, f, indent=2, ensure_ascii=False)

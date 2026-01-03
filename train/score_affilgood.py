@@ -16,10 +16,9 @@ This creates a scored dataset that can be filtered later with different threshol
 Usage:
     uv run score_affilgood.py --org cometadata
 """
-
+import re
 import argparse
 import logging
-import re
 
 from datasets import Dataset, load_dataset
 from huggingface_hub import HfApi
@@ -74,18 +73,15 @@ def score_triplets(model: CrossEncoder, triplets: list[dict], batch_size: int = 
     """
     logger.info(f"Scoring {len(triplets)} triplets...")
 
-    # Prepare pairs for scoring
     positive_pairs = [(t["anchor"], t["positive"]) for t in triplets]
     negative_pairs = [(t["anchor"], t["negative"]) for t in triplets]
 
-    # Score in batches
     logger.info("Scoring positive pairs...")
     positive_scores = model.predict(positive_pairs, batch_size=batch_size, show_progress_bar=True)
 
     logger.info("Scoring negative pairs...")
     negative_scores = model.predict(negative_pairs, batch_size=batch_size, show_progress_bar=True)
 
-    # Add scores to triplets
     scored_triplets = []
     for i, triplet in enumerate(triplets):
         pos_score = float(positive_scores[i])
@@ -108,7 +104,6 @@ def analyze_distribution(scored_triplets: list[dict]) -> dict:
     negative_scores = [t["negative_score"] for t in scored_triplets]
     correct = sum(1 for t in scored_triplets if t["model_correct"])
 
-    # Count by margin buckets
     buckets = {
         "negative": len([m for m in margins if m < 0]),
         "0.0-0.1": len([m for m in margins if 0 <= m < 0.1]),
@@ -149,7 +144,6 @@ def analyze_distribution(scored_triplets: list[dict]) -> dict:
         logger.info(f"  {bucket:15s}: {count:6d} ({pct:5.1f}%) {bar}")
     logger.info("=" * 60)
 
-    # Log threshold recommendations
     logger.info("")
     logger.info("FILTERING RECOMMENDATIONS:")
     for threshold in [0.1, 0.2, 0.3, 0.4, 0.5]:
@@ -203,24 +197,18 @@ def main():
     logger.info(f"Output dataset: {dataset_id}")
     logger.info("=" * 60)
 
-    # Load model
     logger.info(f"Loading model: {args.model}")
     model = CrossEncoder(args.model, trust_remote_code=True)
 
-    # Load and expand AffilGood
     triplets = load_affilgood_triplets()
 
-    # Score all triplets
     scored_triplets = score_triplets(model, triplets, batch_size=args.batch_size)
 
-    # Analyze distribution
     stats = analyze_distribution(scored_triplets)
 
-    # Convert to HuggingFace Dataset
     logger.info("Converting to HuggingFace Dataset...")
     dataset = Dataset.from_list(scored_triplets)
 
-    # Push to Hub
     logger.info(f"Pushing to HuggingFace Hub: {dataset_id}")
     dataset.push_to_hub(
         dataset_id,
